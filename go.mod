@@ -1,4 +1,4 @@
-module github.com/go-chi/telemetry
+module github.com/fitz123/telemetry
 
 go 1.19
 
