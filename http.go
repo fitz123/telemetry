@@ -3,6 +3,7 @@ package telemetry
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -20,11 +21,24 @@ func sample(start time.Time, r *http.Request, ww middleware.WrapResponseWriter) 
 	if !utf8.ValidString(r.URL.Path) {
 		return
 	}
+	// generalize path
+	path, ext := generalizePath(r.URL.Path)
 	labels := map[string]string{
-		"endpoint": fmt.Sprintf("%s %s", r.Method, r.URL.Path),
+		"endpoint": fmt.Sprintf("%s %s", r.Method, path),
 		"status":   fmt.Sprintf("%d", status),
+		"ext":      ext,
 	}
 
 	httpMetrics.RecordDuration("request", labels, start, time.Now().UTC())
 	httpMetrics.RecordHit("requests", labels)
+}
+
+func generalizePath(path string) (string, string) {
+	lastSlashIndex := strings.LastIndex(path, "/")
+	lastDotIndex := strings.LastIndex(path, ".")
+	if lastDotIndex > lastSlashIndex {
+		ext := path[lastDotIndex+1:] // Get the extension without the dot
+		return path[:lastSlashIndex], ext
+	}
+	return path, "" // Return the original path and an empty extension if no extension is found
 }
