@@ -21,12 +21,21 @@ func sample(start time.Time, r *http.Request, ww middleware.WrapResponseWriter) 
 	if !utf8.ValidString(r.URL.Path) {
 		return
 	}
-	// generalize path
+	// Retrieve path without filename and extension from the request URL
 	path, ext := generalizePath(r.URL.Path)
+	if ext == "" {
+		ext = "none"
+	}
+	// Retrieve cache state from response headers
+	cacheState := ww.Header().Get("X-Cache")
+	if cacheState == "" {
+		cacheState = "unknown"
+	}
 	labels := map[string]string{
 		"endpoint": fmt.Sprintf("%s %s", r.Method, path),
 		"status":   fmt.Sprintf("%d", status),
 		"ext":      ext,
+		"cache":    cacheState,
 	}
 
 	httpMetrics.RecordDuration("request", labels, start, time.Now().UTC())
